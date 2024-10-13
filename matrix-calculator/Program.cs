@@ -18,17 +18,17 @@ namespace task_1
     class CofactorMult
     {
         public int size;
-        public int multiplier;
-        public int[,] matrix;
+        public double multiplier;
+        public double[,] matrix;
 
         public CofactorMult()
         {
             this.size = 0;
             this.multiplier = 0;
-            this.matrix = new int[0, 0];
+            this.matrix = new double[0, 0];
         }
 
-        public CofactorMult(int multiplier, int[,] matrix)
+        public CofactorMult(double multiplier, double[,] matrix)
         {
             int xSize = matrix.GetLength(0);
             int ySize = matrix.GetLength(1);
@@ -67,19 +67,19 @@ namespace task_1
 
     class Matrix
     {
-        private int[,] matrix;
+        private double[,] matrix;
 
         public Matrix()
         {
-            matrix = new int[0, 0];
+            matrix = new double[0, 0];
         }
 
         public Matrix(int xSize, int ySize)
         {
-            matrix = new int[xSize, ySize];
+            matrix = new double[xSize, ySize];
         }
 
-        public void SetValue(int val, int x, int y)
+        public void SetValue(double val, int x, int y)
         {
             this.matrix[x, y] = val;
         }
@@ -90,12 +90,12 @@ namespace task_1
             ySize = matrix.GetLength(1);
         }
 
-        public int At(int x, int y)
+        public double At(int x, int y)
         {
             return this.matrix[x, y];
         }
 
-        public void FillRandom(int lowerBorder, int upperBorder)
+        public void FillRandom(double lowerBorder, double upperBorder)
         {
             Size(out int xSize, out int ySize);
             Random rnd = new Random();
@@ -104,7 +104,8 @@ namespace task_1
             {
                 for (int column = 0; column < ySize; column++)
                 {
-                    this.matrix[line, column] = rnd.Next(lowerBorder, upperBorder);
+                    double newVal = rnd.NextDouble() * (upperBorder - lowerBorder) + lowerBorder;
+                    this.matrix[line, column] = newVal;
                 }
             }
         }
@@ -112,7 +113,7 @@ namespace task_1
         public void Transpose()
         {
             this.Size(out int xSize, out int ySize);
-            int[,] transposed = new int[ySize, xSize];
+            double[,] transposed = new double[ySize, xSize];
 
             for (int line = 0; line < xSize; line++)
             {
@@ -125,7 +126,7 @@ namespace task_1
             this.matrix = transposed;
         }
 
-        private int Daterminant2x2(CofactorMult[] cofMult)
+        private double Daterminant2x2(CofactorMult[] cofMult)
         {
             int size = cofMult[0].size;
 
@@ -134,12 +135,12 @@ namespace task_1
                 throw new IncompatibleSizeException();
             }
 
-            int cofactor = 0;
+            double cofactor = 0;
 
             for (int i = 0; i < cofMult.Length; i++)
             {
                 CofactorMult mat = cofMult[i];
-                int temp = mat.matrix[0, 0] * mat.matrix[1, 1] - mat.matrix[0, 1] * mat.matrix[1, 0];
+                double temp = mat.matrix[0, 0] * mat.matrix[1, 1] - mat.matrix[0, 1] * mat.matrix[1, 0];
                 temp *= mat.multiplier;
                 cofactor += temp;
             }
@@ -147,7 +148,7 @@ namespace task_1
             return cofactor;
         }
 
-        static int[,] SubMatrix(int[,] mat, int knockoutCol)
+        static double[,] SubMatrix(double[,] mat, int knockoutCol)
         {
             if (mat.GetUpperBound(0) != mat.GetUpperBound(1))
             {
@@ -155,7 +156,7 @@ namespace task_1
             }
 
             int ubound = mat.GetUpperBound(0);
-            int[,] m = new int[ubound, ubound];
+            double[,] m = new double[ubound, ubound];
 
             int mCol = 0;
             int mRow = 0;
@@ -183,14 +184,14 @@ namespace task_1
 
         private static CofactorMult[] Cofactor(CofactorMult cofactor)
         {
-            int[,] matrix = cofactor.matrix;
-            int majorMult = cofactor.multiplier;
+            double[,] matrix = cofactor.matrix;
+            double majorMult = cofactor.multiplier;
             CofactorMult[] result = new CofactorMult[cofactor.size];
 
             for (int line = 0; line < cofactor.size; line++)
             {
-                int[,] subMatrix = SubMatrix(cofactor.matrix, line);
-                int mult = matrix[line, 0];
+                double[,] subMatrix = SubMatrix(cofactor.matrix, line);
+                double mult = matrix[line, 0];
 
                 if ((line + 2) % 2 != 0)
                 {
@@ -210,13 +211,13 @@ namespace task_1
 
             for (int i = 0; i < cofMult.Length; i++)
             {
-                int majorMult = cofMult[i].multiplier;
+                double majorMult = cofMult[i].multiplier;
 
                 CofactorMult[] temp = Cofactor(cofMult[i]);
 
                 for (int copy = 0; copy < matrixSize; copy++)
                 {
-                    int mult = cofMult[i].matrix[copy, 0];
+                    double mult = cofMult[i].matrix[copy, 0];
 
                     if ((copy + 2) % 2 != 0)
                     {
@@ -230,7 +231,7 @@ namespace task_1
             return result;
         }
 
-        public int Determinant()
+        public double Determinant()
         {
             this.Size(out int xSize, out int ySize);
 
@@ -253,8 +254,8 @@ namespace task_1
 
             for (int col = 0; col < xSize; col++)
             {
-                int[,] subMatrix = SubMatrix(this.matrix, col);
-                int mult = this.matrix[col, 0];
+                double[,] subMatrix = SubMatrix(this.matrix, col);
+                double mult = this.matrix[col, 0];
 
                 if ((col + 2) % 2 != 0)
                 {
@@ -298,7 +299,7 @@ namespace task_1
             {
                 for (int column = 0; column < ySizeLeft; column++)
                 {
-                    int newValue = lho.At(line, column) + rho.At(line, column);
+                    double newValue = lho.At(line, column) + rho.At(line, column);
                     result.SetValue(newValue, line, column);
                 }
             }
@@ -306,10 +307,10 @@ namespace task_1
             return result;
         }
 
-        private static int Product(in Matrix lho, in Matrix rho, int x, int y)
+        private static double Product(in Matrix lho, in Matrix rho, int x, int y)
         {
             lho.Size(out int xSizeLeft, out int ySizeLeft);
-            int result = 0;
+            double result = 0;
 
             for (int i = 0; i < ySizeLeft; i++)
             {
@@ -335,7 +336,7 @@ namespace task_1
             {
                 for (int y = 0; y < ySizeRight; y++)
                 {
-                    int val = Product(in lho, in rho, x, y);
+                    double val = Product(in lho, in rho, x, y);
                     result.SetValue(val, x, y);
                 }
             }
@@ -381,17 +382,27 @@ namespace task_1
             return true;
         }
 
-        static bool IsNumeric(string str)
+        //static bool IsNumeric(string str)
+        //{
+        //    for (int i = 0; i < str.Length; i++)
+        //    {
+        //        if (!char.IsNumber(str[i]))
+        //        {
+        //            return false;
+        //        }
+        //    }
+
+        //    return true;
+        //}
+
+        public static bool IsNumeric(string valueToTest)
         {
-            for (int i = 0; i < str.Length; i++)
+            if (double.TryParse(valueToTest, out double d) && !Double.IsNaN(d) && !Double.IsInfinity(d))
             {
-                if (!char.IsNumber(str[i]))
-                {
-                    return false;
-                }
+                return true;
             }
 
-            return true;
+            return false;
         }
 
         static bool CreateMatrix(in string[] args)
@@ -451,16 +462,16 @@ namespace task_1
 
             if (args.Length == 3)
             {
-                Data[name].FillRandom(1, 100);
+                Data[name].FillRandom(1.0f, 100.0f);
                 Console.WriteLine($"matrix {name}:\n{Data[name]}");
                 return true;
             }
             else if (args.Length == 5)
             {
-                bool isValidxSize = int.TryParse(args[3], out int lowerBorder);
-                bool isValidySize = int.TryParse(args[4], out int upperBorder);
+                bool isValidLowerBorder = double.TryParse(args[3], out double lowerBorder);
+                bool isValidUpperBorder = double.TryParse(args[4], out double upperBorder);
 
-                if (!(isValidxSize && isValidySize))
+                if (!(isValidLowerBorder && isValidUpperBorder))
                 {
                     Console.WriteLine("invalid args\n");
                     return false;
@@ -484,10 +495,10 @@ namespace task_1
             for (int line = 0; line < xSize;)
             {
                 Console.Write($"{line}\t");
-                string[] intLine = Console.ReadLine().Split();
+                string[] doubleLine = Console.ReadLine().Split();
                 bool isValid = true;
 
-                if (intLine.Length != ySize)
+                if (doubleLine.Length != ySize)
                 {
                     Console.WriteLine("invalid args amount");
                     continue;
@@ -499,9 +510,9 @@ namespace task_1
 
                 for (int column = 0; column < ySize; column++)
                 {
-                    if (!int.TryParse(intLine[column], out int val))
+                    if (!double.TryParse(doubleLine[column], out double val))
                     {
-                        Console.WriteLine($"{intLine[column]} is not a decimal value");
+                        Console.WriteLine($"{doubleLine[column]} is not a decimal value");
                         isValid = false;
                         break;
                     }
@@ -629,7 +640,7 @@ namespace task_1
                 return false;
             }
 
-            int determinant = matrix.Determinant();
+            double determinant = matrix.Determinant();
             Console.WriteLine($"determinant of {name}: {determinant}\n");
 
             return true;
