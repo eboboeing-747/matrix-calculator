@@ -1,6 +1,7 @@
 ﻿using Exceptions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Exceptions
 {
@@ -14,6 +15,56 @@ namespace Exceptions
 
 namespace task_1
 {
+    class CofactorMult
+    {
+        public int size;
+        public int multiplier;
+        public int[,] matrix;
+
+        public CofactorMult()
+        {
+            this.size = 0;
+            this.multiplier = 0;
+            this.matrix = new int[0, 0];
+        }
+
+        public CofactorMult(int multiplier, int[,] matrix)
+        {
+            int xSize = matrix.GetLength(0);
+            int ySize = matrix.GetLength(1);
+
+            if (xSize != ySize)
+            {
+                throw new IncompatibleSizeException();
+            }
+
+            this.size = xSize;
+            this.multiplier = multiplier;
+            this.matrix = matrix;
+        }
+
+        public override String ToString()
+        {
+            string result = this.multiplier.ToString() + "\n";
+
+            for (int line = 0; line < this.matrix.GetLength(0); line++)
+            {
+                result += "(";
+                for (int item = 0; item < this.matrix.GetLength(1); item++)
+                {
+                    result += matrix[line, item].ToString();
+                    if (item < this.matrix.GetLength(1) - 1)
+                    {
+                        result += " ";
+                    }
+                }
+                result += ")\n";
+            }
+
+            return result;
+        }
+    }
+
     class Matrix
     {
         private int[,] matrix;
@@ -72,6 +123,158 @@ namespace task_1
             }
 
             this.matrix = transposed;
+        }
+
+        private int Daterminant2x2(CofactorMult[] cofMult)
+        {
+            int size = cofMult[0].size;
+
+            if (size != 2)
+            {
+                throw new IncompatibleSizeException();
+            }
+
+            int cofactor = 0;
+
+            for (int i = 0; i < cofMult.Length; i++)
+            {
+                CofactorMult mat = cofMult[i];
+                int temp = mat.matrix[0, 0] * mat.matrix[1, 1] - mat.matrix[0, 1] * mat.matrix[1, 0];
+                temp *= mat.multiplier;
+                cofactor += temp;
+            }
+
+            return cofactor;
+        }
+
+        static int[,] SubMatrix(int[,] mat, int knockoutCol)
+        {
+            if (mat.GetUpperBound(0) != mat.GetUpperBound(1))
+            {
+                throw new IncompatibleSizeException();
+            }
+
+            int ubound = mat.GetUpperBound(0);
+            int[,] m = new int[ubound, ubound];
+
+            int mCol = 0;
+            int mRow = 0;
+
+            for (int row = 1; row <= ubound; row++)
+            {
+                mCol = 0;
+                for (int col = 0; col <= ubound; col++)
+                {
+                    if (col == knockoutCol)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        m[mCol, mRow] = mat[col, row];
+                        mCol += 1;
+                    }
+                }
+                mRow += 1;
+            };
+
+            return m;
+        }
+
+        private static CofactorMult[] Cofactor(CofactorMult cofactor)
+        {
+            int[,] matrix = cofactor.matrix;
+            int majorMult = cofactor.multiplier;
+            CofactorMult[] result = new CofactorMult[cofactor.size];
+
+            for (int line = 0; line < cofactor.size; line++)
+            {
+                int[,] subMatrix = SubMatrix(cofactor.matrix, line);
+                int mult = matrix[line, 0];
+
+                if ((line + 2) % 2 != 0)
+                {
+                    mult = -mult;
+                }
+
+                result[line] = new CofactorMult(mult * majorMult, subMatrix);
+            }
+
+            return result;
+        }
+
+        private static CofactorMult[] Cofactor(CofactorMult[] cofMult)
+        {
+            int matrixSize = cofMult[0].size;
+            CofactorMult[] result = new CofactorMult[cofMult.Length * matrixSize];
+
+            for (int i = 0; i < cofMult.Length; i++)
+            {
+                int majorMult = cofMult[i].multiplier;
+
+                CofactorMult[] temp = Cofactor(cofMult[i]);
+
+                for (int copy = 0; copy < matrixSize; copy++)
+                {
+                    int mult = cofMult[i].matrix[copy, 0];
+
+                    if ((copy + 2) % 2 != 0)
+                    {
+                        mult = -mult;
+                    }
+
+                    result[i * matrixSize + copy] = temp[copy];
+                }
+            }
+
+            return result;
+        }
+
+        public int Determinant()
+        {
+            this.Size(out int xSize, out int ySize);
+
+            if (xSize != ySize)
+            {
+                throw new IncompatibleSizeException();
+            }
+
+            if (xSize == 1)
+            {
+                return this.matrix[0, 0];
+            }
+
+            if (xSize == 2)
+            {
+                return this.matrix[0, 0] * this.matrix[1, 1] - this.matrix[1, 0] * this.matrix[0, 1];
+            }
+
+            CofactorMult[] cofMult = new CofactorMult[xSize];
+
+            for (int col = 0; col < xSize; col++)
+            {
+                int[,] subMatrix = SubMatrix(this.matrix, col);
+                int mult = this.matrix[col, 0];
+
+                if ((col + 2) % 2 != 0)
+                {
+                    mult = -mult;
+                }
+
+                cofMult[col] = new CofactorMult(mult, subMatrix);
+            }
+
+            while (true)
+            {
+                if (cofMult[0].size == 2)
+                {
+                    return Daterminant2x2(cofMult);
+                }
+                else
+                {
+                    cofMult = Cofactor(cofMult);
+                }
+            }
         }
 
         public static Matrix operator +(Matrix lho, Matrix rho)
@@ -331,13 +534,13 @@ namespace task_1
 
             if (xSizeLeft != xSizeRight)
             {
-                Console.WriteLine($"matrix sizes are incompetible: {xSizeLeft} != {xSizeRight}");
+                Console.WriteLine($"matrix sizes are incompetible: {xSizeLeft} != {xSizeRight}\n");
                 return false;
             }
 
             if (ySizeLeft != ySizeRight)
             {
-                Console.WriteLine($"matrix sizes are incompetible: {ySizeLeft} != {ySizeRight}");
+                Console.WriteLine($"matrix sizes are incompetible: {ySizeLeft} != {ySizeRight}\n");
                 return false;
             }
 
@@ -369,7 +572,7 @@ namespace task_1
 
             if (xSizeLeft != ySizeRight)
             {
-                Console.WriteLine($"matrix sizes are incompetible: {xSizeLeft} != {ySizeRight}");
+                Console.WriteLine($"matrix sizes are incompetible: {xSizeLeft} != {ySizeRight}\n");
                 return false;
             }
 
@@ -409,6 +612,50 @@ namespace task_1
             return true;
         }
 
+        static bool Determinant(string name)
+        {
+            if (!Data.ContainsKey(name))
+            {
+                Console.WriteLine($"no such name: {name}\n");
+                return false;
+            }
+
+            Matrix matrix = Data[name];
+            matrix.Size(out int xSize, out int ySize);
+
+            if (xSize != ySize)
+            {
+                Console.WriteLine($"illegal matix size: ({xSize}x{ySize})\n");
+                return false;
+            }
+
+            int determinant = matrix.Determinant();
+            Console.WriteLine($"determinant of {name}: {determinant}\n");
+
+            return true;
+        }
+
+        static void Display(string argument)
+        {
+            if (argument == "names")
+            {
+                string[] names = Data.Keys.ToArray();
+                for (int i = 0; i < names.Length; i++)
+                {
+                    Console.Write($"{names[i]} ");
+                }
+                Console.WriteLine("\n");
+                return;
+            }
+
+            if (!Data.ContainsKey(argument))
+            {
+                Console.WriteLine($"no such name {argument}");
+                return;
+            }
+
+            Console.WriteLine($"{argument}:\n{Data[argument]}");
+        }
 
         static string Override(string name)
         {
@@ -446,7 +693,11 @@ namespace task_1
             {
                 string[] args = Console.ReadLine().Split();
 
-                if (args.Length < 2)
+                if (args.Length == 0)
+                {
+                    continue;
+                }
+                else if (args.Length < 2)
                 {
                     Console.WriteLine("not enough args");
                     continue;
@@ -454,17 +705,9 @@ namespace task_1
 
                 string command = args[0];
 
-                if (command == "display")
+                if ((command == "display") || (command == "view"))
                 {
-                    string name = args[1];
-
-                    if (!Data.ContainsKey(name))
-                    {
-                        Console.WriteLine($"no such name {name}");
-                        continue;
-                    }
-
-                    Console.WriteLine($"{name}:\n{Data[name]}");
+                    Display(args[1]);
                     continue;
                 }
                 else if (command == "new")
@@ -487,9 +730,10 @@ namespace task_1
                     Mult(args);
                     continue;
                 }
-                else if (command == "determ")
+                else if ((command == "determinant") || (command == "det"))
                 {
-                    // calc determinant
+                    Determinant(args[1]);
+                    continue;
                 }
                 else if (command == "invert")
                 {
