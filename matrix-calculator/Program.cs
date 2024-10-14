@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Xml.Linq;
 
 namespace Exceptions
 {
@@ -76,33 +77,30 @@ namespace matrix_calculator
     class Matrix
     {
         private double[,] matrix;
-        double determinant;
-        bool isDeterminant;
 
         public Matrix()
         {
             this.matrix = new double[0, 0];
-            this.determinant = 0;
-            this.isDeterminant = false;
         }
 
         public Matrix(int xSize, int ySize)
         {
             this.matrix = new double[xSize, ySize];
-            this.determinant = 0;
-            this.isDeterminant = false;
         }
 
         public Matrix(double[,] matrix)
         {
             this.matrix = matrix;
-            this.determinant = 0;
-            this.isDeterminant = false;
         }
 
         public void SetValue(double val, int x, int y)
         {
             this.matrix[x, y] = val;
+        }
+
+        public void SetMatrix(double[,] matrix)
+        {
+            this.matrix = matrix;
         }
 
         public void Size(out int xSize, out int ySize)
@@ -145,7 +143,7 @@ namespace matrix_calculator
             }
         }
 
-        public void Transpose()
+        public Matrix Transpose()
         {
             this.Size(out int xSize, out int ySize);
             double[,] transposed = new double[ySize, xSize];
@@ -158,7 +156,7 @@ namespace matrix_calculator
                 }
             }
 
-            this.matrix = transposed;
+            return new Matrix(transposed);
         }
 
         private static double Determinant2x2(CofactorMult[] cofMult)
@@ -183,41 +181,7 @@ namespace matrix_calculator
             return cofactor;
         }
 
-        private static double[,] SubMatrix(double[,] mat, int knockoutCol)
-        {
-            if (mat.GetUpperBound(0) != mat.GetUpperBound(1))
-            {
-                throw new IncompatibleSizeException();
-            }
-
-            int ubound = mat.GetUpperBound(0);
-            double[,] m = new double[ubound, ubound];
-
-            int mCol = 0;
-            int mRow = 0;
-
-            for (int row = 1; row <= ubound; row++)
-            {
-                mCol = 0;
-                for (int col = 0; col <= ubound; col++)
-                {
-                    if (col == knockoutCol)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        m[mCol, mRow] = mat[col, row];
-                        mCol += 1;
-                    }
-                }
-                mRow += 1;
-            };
-
-            return m;
-        }
-
-        public static double[,] SubMatrix(double[,] matrix, int knockoutLine, int knockoutColumn)
+        private static double[,] SubMatrix(double[,] matrix, int knockoutLine, int knockoutColumn)
         {
             int xSize = matrix.GetLength(0);
             int ySize = matrix.GetLength(1);
@@ -300,11 +264,6 @@ namespace matrix_calculator
 
         public double Determinant()
         {
-            if (this.isDeterminant)
-            {
-                return this.determinant;
-            }
-
             this.Size(out int xSize, out int ySize);
 
             if (xSize != ySize)
@@ -402,7 +361,7 @@ namespace matrix_calculator
         {
             double determinant = this.Determinant();
 
-            if (determinant == 0)
+            if (Math.Abs(determinant) < 0.0001f)
             {
                 throw new IllegalDeterminantException();
             }
@@ -532,19 +491,6 @@ namespace matrix_calculator
 
             return true;
         }
-
-        //static bool IsNumeric(string str)
-        //{
-        //    for (int i = 0; i < str.Length; i++)
-        //    {
-        //        if (!char.IsNumber(str[i]))
-        //        {
-        //            return false;
-        //        }
-        //    }
-
-        //    return true;
-        //}
 
         public static bool IsNumeric(string valueToTest)
         {
@@ -777,19 +723,17 @@ namespace matrix_calculator
             }
 
             string newName = args[1];
-            string toTransposeName = args[2];
+            string transposeBaseName = args[2];
+            Matrix transposeBase = Data[transposeBaseName];
 
             if (Data.ContainsKey(newName))
             {
                 newName = Override(newName);
             }
 
-            Matrix toTranspose = Data[toTransposeName];
-            Matrix Transposed = toTranspose;
-            Transposed.Transpose();
-
-            Data[newName] = Transposed;
-            Console.WriteLine($"{toTransposeName} is transposed and stored in {newName}\n");
+            Matrix transposed = transposeBase.Transpose();
+            Data[newName] = transposed;
+            Console.WriteLine($"{transposeBaseName} is transposed and stored in {newName}\n");
 
             return true;
         }
@@ -828,6 +772,12 @@ namespace matrix_calculator
             string newName = args[1];
             string invertBaseName = args[2];
 
+            if (!Data.ContainsKey(invertBaseName))
+            {
+                Console.WriteLine($"no such name: {invertBaseName}\n");
+                return false;
+            }
+
             Matrix invertBase = Data[invertBaseName];
             invertBase.Size(out int xSize, out int ySize);
 
@@ -839,7 +789,7 @@ namespace matrix_calculator
 
             if (Math.Abs(invertBase.Determinant()) < 0.0001f)
             {
-                Console.WriteLine($"determinant of {invertBaseName} is 0");
+                Console.WriteLine($"failed to invert: determinant of {invertBaseName} is 0\n");
                 return false;
             }
 
@@ -960,7 +910,7 @@ namespace matrix_calculator
                     Invert(args);
                     continue;
                 }
-                else if (command == "transpose")
+                else if ((command == "transpose") || (command == "trsp"))
                 {
                     Transpose(args);
                     continue;
