@@ -1,6 +1,7 @@
 ﻿using Exceptions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Xml.Linq;
@@ -435,7 +436,7 @@ namespace matrix_calculator
             lho.Size(out int xSizeLeft, out int ySizeLeft);
             rho.Size(out int xSizeRight, out int ySizeRight);
 
-            if (xSizeLeft != ySizeRight)
+            if (ySizeLeft != xSizeRight)
             {
                 throw new IncompatibleSizeException();
             }
@@ -693,14 +694,27 @@ namespace matrix_calculator
             string newName = args[1];
             string lhoName = args[2];
             string rhoName = args[3];
+
+            if (!Data.ContainsKey(lhoName))
+            {
+                Console.WriteLine($"no such name: {lhoName}");
+                return false;
+            }
+
+            if (!Data.ContainsKey(rhoName))
+            {
+                Console.WriteLine($"no such name: {rhoName}");
+                return false;
+            }
+
             Matrix lho = Data[lhoName];
             Matrix rho = Data[rhoName];
             lho.Size(out int xSizeLeft, out int ySizeLeft);
             rho.Size(out int xSizeRight, out int ySizeRight);
 
-            if (xSizeLeft != ySizeRight)
+            if (ySizeLeft != xSizeRight)
             {
-                Console.WriteLine($"matrix sizes are incompetible: {xSizeLeft} != {ySizeRight}\n");
+                Console.WriteLine($"matrix sizes are incompetible: {ySizeLeft} != {xSizeRight}\n");
                 return false;
             }
 
@@ -805,6 +819,45 @@ namespace matrix_calculator
             return true;
         }
 
+        static bool Solve(string[] args)
+        {
+            if (args.Length != 4)
+            {
+                Console.WriteLine("invalid args amount\n");
+                return false;
+            }
+
+            string resultName = args[1];
+            string matrixName = args[2];
+            string vectorName = args[3];
+            Matrix matrix = Data[matrixName];
+            Matrix vector = Data[vectorName];
+            matrix.Size(out int xSizeMatrix, out int ySizeMatrix);
+            vector.Size(out int xSizeVector, out int ySizeVector);
+
+            if (ySizeVector != 1)
+            {
+                Console.WriteLine($"amount of columns in quantity vector {vectorName} != 1");
+                return false;
+            }
+
+            if ((ySizeMatrix != xSizeVector) || (xSizeMatrix != ySizeMatrix))
+            {
+                Console.WriteLine($"matrix sizes are incompetible: {ySizeMatrix} != {xSizeVector}\n");
+                return false;
+            }
+
+            if (Data.ContainsKey(resultName))
+            {
+                resultName = Override(resultName);
+            }
+
+            Matrix inverted = matrix.Inverted();
+            Data[resultName] = inverted * vector;
+            Console.WriteLine($"solution of {matrixName}, {vectorName} is stored in {resultName}\n");
+            return true;
+        }
+
         static void Display(string argument)
         {
             if (argument == "names")
@@ -863,19 +916,22 @@ namespace matrix_calculator
             {
                 string[] args = Console.ReadLine().Split();
 
-                if (args.Length == 0)
+                if (args.Length < 2)
                 {
-                    continue;
-                }
-                else if (args.Length < 2)
-                {
-                    Console.WriteLine("not enough args");
                     continue;
                 }
 
                 string command = args[0];
 
-                if ((command == "display") || (command == "view"))
+                if (command == "quit")
+                {
+                    return;
+                }
+                else if (command == "//")
+                {
+                    continue;
+                }
+                else if ((command == "display") || (command == "view"))
                 {
                     Display(args[1]);
                     continue;
@@ -917,7 +973,8 @@ namespace matrix_calculator
                 }
                 else if (command == "solve")
                 {
-                    // solve equation system
+                    Solve(args);
+                    continue;
                 }
                 else
                 {
