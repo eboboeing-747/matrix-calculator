@@ -847,6 +847,14 @@ namespace matrix_calculator
                 return false;
             }
 
+            double determinant = matrix.Determinant();
+
+            if (Math.Abs(determinant) < 0.0001f)
+            {
+                Console.WriteLine($"failed to solve: determinant of {matrixName} is 0");
+                return false;
+            }
+
             if (Data.ContainsKey(resultName))
             {
                 resultName = Override(resultName);
